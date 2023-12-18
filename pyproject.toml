@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "savingsatoshi-bech32py"
+version = "0.1.0"
+description = "bech32 modules for Saving Satoshi code challenges"
+authors = ["Matthew Zipkin <pinheadmz@gmail.com>"]
+license = "MIT"
+packages = [{include = "bech32py"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
