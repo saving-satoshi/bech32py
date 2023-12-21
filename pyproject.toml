@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "savingsatoshi-bech32py"
-version = "0.1.0"
+name = "savingsatoshi_bech32py"
+version = "0.2.0"
 description = "bech32 modules for Saving Satoshi code challenges"
 authors = ["Matthew Zipkin <pinheadmz@gmail.com>"]
 license = "MIT"
