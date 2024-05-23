@@ -45,35 +45,35 @@ def bech32_polymod(values):
     return chk
 
 
-def bech32_hrp_expand(hrp):
-    """Expand the HRP into values for checksum computation."""
-    return [ord(x) >> 5 for x in hrp] + [0] + [ord(x) & 31 for x in hrp]
+def bech32_hrp_expand(human_readable_prefix):
+    """Expand the human readable prefix into values for checksum computation."""
+    return [ord(x) >> 5 for x in human_readable_prefix] + [0] + [ord(x) & 31 for x in human_readable_prefix]
 
 
-def bech32_verify_checksum(hrp, data):
-    """Verify a checksum given HRP and converted data characters."""
-    const = bech32_polymod(bech32_hrp_expand(hrp) + data)
+def bech32_verify_checksum(human_readable_prefix, data):
+    """Verify a checksum given human readable prefix and converted data characters."""
+    const = bech32_polymod(bech32_hrp_expand(human_readable_prefix) + data)
     if const == 1:
         return Encoding.BECH32
     if const == BECH32M_CONST:
         return Encoding.BECH32M
     return None
 
-def bech32_create_checksum(hrp, data, spec):
-    """Compute the checksum values given HRP and data."""
-    values = bech32_hrp_expand(hrp) + data
+def bech32_create_checksum(human_readable_prefix, data, spec):
+    """Compute the checksum values given a human readable prefix and data."""
+    values = bech32_hrp_expand(human_readable_prefix) + data
     const = BECH32M_CONST if spec == Encoding.BECH32M else 1
     polymod = bech32_polymod(values + [0, 0, 0, 0, 0, 0]) ^ const
     return [(polymod >> 5 * (5 - i)) & 31 for i in range(6)]
 
 
-def bech32_encode(hrp, data, spec):
-    """Compute a Bech32 string given HRP and data values."""
-    combined = data + bech32_create_checksum(hrp, data, spec)
-    return hrp + '1' + ''.join([CHARSET[d] for d in combined])
+def bech32_encode(human_readable_prefix, data, spec):
+    """Compute a Bech32 string given a human readable prefix and data values."""
+    combined = data + bech32_create_checksum(human_readable_prefix, data, spec)
+    return human_readable_prefix + '1' + ''.join([CHARSET[d] for d in combined])
 
 def bech32_decode(bech):
-    """Validate a Bech32/Bech32m string, and determine HRP and data."""
+    """Validate a Bech32/Bech32m string, and determine a human readable prefix and data."""
     if ((any(ord(x) < 33 or ord(x) > 126 for x in bech)) or
             (bech.lower() != bech and bech.upper() != bech)):
         return (None, None, None)
@@ -83,12 +83,12 @@ def bech32_decode(bech):
         return (None, None, None)
     if not all(x in CHARSET for x in bech[pos+1:]):
         return (None, None, None)
-    hrp = bech[:pos]
+    human_readable_prefix = bech[:pos]
     data = [CHARSET.find(x) for x in bech[pos+1:]]
-    spec = bech32_verify_checksum(hrp, data)
+    spec = bech32_verify_checksum(human_readable_prefix, data)
     if spec is None:
         return (None, None, None)
-    return (hrp, data[:-6], spec)
+    return (human_readable_prefix, data[:-6], spec)
 
 def convertbits(data, frombits, tobits, pad=True):
     """General power-of-2 base conversion."""
@@ -113,10 +113,10 @@ def convertbits(data, frombits, tobits, pad=True):
     return ret
 
 
-def decode(hrp, addr):
+def decode(human_readable_prefix, addr):
     """Decode a segwit address."""
     hrpgot, data, spec = bech32_decode(addr)
-    if hrpgot != hrp:
+    if hrpgot != human_readable_prefix:
         return (None, None)
     decoded = convertbits(data[1:], 5, 8, False)
     if decoded is None or len(decoded) < 2 or len(decoded) > 40:
@@ -130,10 +130,10 @@ def decode(hrp, addr):
     return (data[0], decoded)
 
 
-def encode(hrp, witver, witprog):
+def encode(human_readable_prefix, witver, witprog):
     """Encode a segwit address."""
     spec = Encoding.BECH32 if witver == 0 else Encoding.BECH32M
-    ret = bech32_encode(hrp, [witver] + convertbits(witprog, 8, 5), spec)
-    if decode(hrp, ret) == (None, None):
+    ret = bech32_encode(human_readable_prefix, [witver] + convertbits(witprog, 8, 5), spec)
+    if decode(human_readable_prefix, ret) == (None, None):
         return None
     return ret
